@@ -1,79 +1,32 @@
-// Copyright 2014 The gocui Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package main
 
 import (
+	"flag"
 	"log"
-
-	"github.com/jroimartin/gocui"
+	"strings"
 )
 
-func layout(g *gocui.Gui) error {
-	maxX, maxY := g.Size()
-	if v, err := g.SetView("sending", 1, 1, maxX/2-1, maxY/2-1); err != nil {
-		if err != gocui.ErrUnknownView {
-			return err
-		}
-		v.Title = "sending"
-		v.Wrap = true
-		v.Autoscroll = true
-	}
-
-	if v, err := g.SetView("receiving", maxX/2, 1, maxX-1, maxY/2-1); err != nil {
-		if err != gocui.ErrUnknownView {
-			return err
-		}
-		v.Title = "receiving"
-		v.Wrap = true
-		v.Autoscroll = true
-	}
-
-	if v, err := g.SetView("barcodes", 0, maxY/2+1, (maxX/4)*3-1, maxY-1); err != nil {
-		if err != gocui.ErrUnknownView {
-			return err
-		}
-		v.Title = "barcodes"
-		v.Editable = true
-		v.Wrap = true
-		v.Autoscroll = true
-	}
-
-	if v, err := g.SetView("basket_status", (maxX/4)*3, maxY/2+1, maxX-1, maxY-1); err != nil {
-		if err != gocui.ErrUnknownView {
-			return err
-		}
-		v.Title = "basket status"
-		v.Wrap = true
-		v.Autoscroll = true
-	}
-
-	return nil
-}
-
-func quit(g *gocui.Gui, v *gocui.View) error {
-	return gocui.ErrQuit
-}
+var (
+	barcodes []string
+	basketID string
+	addr     string
+)
 
 func main() {
-	g, err := gocui.NewGui(gocui.OutputNormal)
+	bs := flag.String("barcodes", "8888351100042,9556166090085,8850025001023", "barcodes send to PLC socket server")
+	flag.StringVar(&basketID, "basket_id", "3345678", "basket id send to PLC socket server")
+	flag.StringVar(&addr, "addr", "localhost:10010", "PLC socker server address")
+	endian := flag.String("endian", "BigEndian", "packet endian BigEndian or LittleEndian")
+	ssid := flag.String("ssid", "world-wild-only-SSID", "the plc device connected wifi SSID")
+	localPort := flag.Int("local_port", 33456, "the plc device port to dial plc server")
+	flag.Parse()
+
+	barcodes = strings.Split(*bs, ",")
+
+	client, err := newClient(addr, *ssid, *endian, *localPort)
 	if err != nil {
-		log.Panicln(err)
-	}
-	defer g.Close()
-
-	g.Highlight = true
-	g.Cursor = true
-	g.SelFgColor = gocui.ColorGreen
-
-	g.SetManagerFunc(layout)
-
-	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
-		log.Panicln(err)
+		log.Fatalf("new client failed:%v", err)
 	}
 
-	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
-		log.Panicln(err)
-	}
+	client.close()
 }
