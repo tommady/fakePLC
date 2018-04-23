@@ -27,6 +27,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("new client failed:%v", err)
 	}
+	defer client.close()
 
-	client.close()
+	if err = client.purchase(basketID, barcodes); err != nil {
+		log.Fatalf("write purchase failed:%v", err)
+	}
 }

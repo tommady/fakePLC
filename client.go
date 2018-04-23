@@ -95,7 +95,9 @@ func (c *client) auth(ssid string) error {
 	copy(sid[:], ssid)
 	binary.Write(c.writer, binary.BigEndian, sid)
 	binary.Write(c.writer, binary.BigEndian, [2]byte{'\r', '\n'})
-	c.writer.Flush()
+	if err := c.writer.Flush(); err != nil {
+		return err
+	}
 
 	cmd, err := c.packet.unpackCmdHeader(c.reader)
 	if err != nil {
@@ -114,5 +116,24 @@ func (c *client) auth(ssid string) error {
 		return errors.New("recieve auth status not OK: " + string(res.status) + ", " + res.msg)
 	}
 
+	return nil
+}
+
+func (c *client) purchase(basketID string, barcodes []string) error {
+	binary.Write(c.writer, c.packet.endian, uint16(3))
+	binary.Write(c.writer, c.packet.endian, [2]byte{'\r', '\n'})
+	binary.Write(c.writer, c.packet.endian, uint16(len(basketID)))
+	binary.Write(c.writer, c.packet.endian, uint32(len(barcodes)))
+	bsid := make([]byte, 58)
+	copy(bsid[:], basketID)
+	binary.Write(c.writer, c.packet.endian, bsid)
+	bcode := make([]byte, 30)
+	for _, barcode := range barcodes {
+		binary.Write(c.writer, c.packet.endian, uint16(len(barcode)))
+		copy(bcode[:], barcode)
+		binary.Write(c.writer, c.packet.endian, bcode)
+	}
+	binary.Write(c.writer, c.packet.endian, [2]byte{'\r', '\n'})
+	c.writer.Flush()
 	return nil
 }
