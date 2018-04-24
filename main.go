@@ -13,7 +13,7 @@ var (
 )
 
 func main() {
-	bs := flag.String("barcodes", "8888351100042,9556166090085,8850025001023", "barcodes send to PLC socket server")
+	bs := flag.String("barcodes", "8888351100042", "barcodes send to PLC socket server")
 	flag.StringVar(&basketID, "basket_id", "3345678", "basket id send to PLC socket server")
 	flag.StringVar(&addr, "addr", "localhost:10010", "PLC socker server address")
 	endian := flag.String("endian", "BigEndian", "packet endian BigEndian or LittleEndian")

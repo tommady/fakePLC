@@ -78,7 +78,7 @@ type response struct {
 }
 
 type responsePacket struct {
-	Scode uint16
+	Scode uint32
 	Msg   [60]byte
 }
 
@@ -87,6 +87,7 @@ func (p *packet) unpackResponse(data *bufio.Reader) (*response, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	res := new(responsePacket)
 	if err := binary.Read(b, p.endian, res); err != nil {
 		return nil, err
