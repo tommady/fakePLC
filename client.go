@@ -6,7 +6,6 @@ import (
 	"errors"
 	"log"
 	"net"
-	"strconv"
 )
 
 type client struct {
@@ -134,24 +133,5 @@ func (c *client) purchase(basketID string, barcodes []string) error {
 		binary.Write(c.writer, c.packet.endian, bcode)
 	}
 	binary.Write(c.writer, c.packet.endian, [2]byte{'\r', '\n'})
-	c.writer.Flush()
-
-	cmd, err := c.packet.unpackCmdHeader(c.reader)
-	if err != nil {
-		return err
-	}
-	if cmd != responseCmd {
-		return errors.New("purchase recieve not a response command: " + strconv.Itoa(cmd))
-	}
-
-	res, err := c.packet.unpackResponse(c.reader)
-	if err != nil {
-		return err
-	}
-
-	if res.status != statusOK {
-		return errors.New("purchase recieve status not OK: " + strconv.Itoa(res.status))
-	}
-
-	return nil
+	return c.writer.Flush()
 }
