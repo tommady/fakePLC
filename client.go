@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log"
 	"net"
+	"strconv"
 )
 
 type client struct {
@@ -42,8 +43,6 @@ func newClient(addr, ssid, endian string, localPort int) (*client, error) {
 		return nil, err
 	}
 
-	go c.handler()
-
 	return c, nil
 }
 
@@ -58,28 +57,53 @@ func (c *client) close() error {
 	return nil
 }
 
-func (c *client) handler() {
+func (c *client) receiveResponse() (*response, error) {
+	cmd, err := c.packet.unpackCmdHeader(c.reader)
+	if err != nil {
+		return nil, err
+	}
+
+	switch cmd {
+	case responseCmd:
+		res, err := c.packet.unpackResponse(c.reader)
+		if err != nil {
+			return nil, err
+		}
+		return res, nil
+
+	default:
+		return nil, errors.New("receive a not response packet: " + strconv.Itoa(cmd))
+	}
+}
+
+func (c *client) handlingLongTerm() {
 	go func() {
 		defer c.close()
 		for {
 			cmd, err := c.packet.unpackCmdHeader(c.reader)
 			if err != nil {
-				log.Printf("[PLC] read failed:%v", err)
+				log.Printf("read failed:%v", err)
 				break
 			}
 
 			switch cmd {
 			case responseCmd:
-				if res, err := c.packet.unpackResponse(c.reader); err != nil {
-					log.Printf("[PLC] unpack response failed:%v", err)
-				} else {
-					log.Printf("[PLC] response status%v, msg:%v", res.status, res.msg)
+				res, err := c.packet.unpackResponse(c.reader)
+				if err != nil {
+					log.Printf("receive response failed:%v", err)
+				}
+				switch res.status {
+				case statusOK:
+					log.Printf("basket[%s] success", res.msg)
+				case statusProcessFailed:
+					log.Printf("basket[%s] process failed", res.msg)
 				}
 
 			case hearbeatCmd:
 				c.packet.writeHeartbeat(c.writer)
+				log.Printf("handled heartbeat")
 			default:
-				log.Printf("[PLC] recieve unknown cmd:%d", cmd)
+				log.Printf("recieve unknown cmd:%d", cmd)
 				break
 			}
 		}

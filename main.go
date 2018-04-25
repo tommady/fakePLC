@@ -22,7 +22,18 @@ func main() {
 		if err = client.purchase(conf.basketID, conf.barcodes); err != nil {
 			log.Fatalf("write purchase failed:%v", err)
 		}
+		res, err := client.receiveResponse()
+		if err != nil {
+			log.Fatalf("receive purchase response failed:%v", err)
+		}
+		switch res.status {
+		case statusOK:
+			log.Printf("basket[%s] success", res.msg)
+		case statusProcessFailed:
+			log.Printf("basket[%s] process failed", res.msg)
+		}
 	case "test-many":
+		client.handlingLongTerm()
 		for i := 0; i < conf.roundTimes; i++ {
 			if err = client.purchase(conf.basketID, conf.barcodes); err != nil {
 				log.Fatalf("write purchase failed:%v", err)
