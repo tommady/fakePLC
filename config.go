@@ -33,7 +33,7 @@ func newConfig() (*configuration, error) {
 	flag.IntVar(&c.localPort, "local_port", 33456, "the plc device port to dial plc server")
 	bs := flag.String("barcodes", "8888351100042,9556166090085,8850025001023", "barcodes send to PLC socket server")
 	flag.IntVar(&c.roundTimes, "round_times", 1000, "run how many times")
-	rd := flag.Int("round_period_sec", 1, "run period second")
+	rd := flag.Int("round_period_sec", 3, "run period second")
 
 	flag.Parse()
 	c.barcodes = strings.Split(*bs, ",")
