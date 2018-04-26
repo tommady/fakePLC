@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"strconv"
+	"time"
 )
 
 type client struct {
@@ -14,6 +15,7 @@ type client struct {
 	reader *bufio.Reader
 	writer *bufio.Writer
 	packet *packet
+	start  time.Time
 	done   chan struct{}
 }
 
@@ -92,6 +94,7 @@ func (c *client) handlingLongTerm() {
 				if err != nil {
 					log.Printf("receive response failed:%v", err)
 				}
+				log.Printf("basket[%s] took %s", res.msg, time.Since(c.start))
 				switch res.status {
 				case statusOK:
 					log.Printf("basket[%s] success", res.msg)
@@ -143,6 +146,7 @@ func (c *client) auth(ssid string) error {
 }
 
 func (c *client) purchase(basketID string, barcodes []string) error {
+	c.start = time.Now()
 	binary.Write(c.writer, c.packet.endian, uint16(3))
 	binary.Write(c.writer, c.packet.endian, [2]byte{'\r', '\n'})
 	binary.Write(c.writer, c.packet.endian, uint16(len(basketID)))

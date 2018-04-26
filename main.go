@@ -26,6 +26,8 @@ func main() {
 		if err != nil {
 			log.Fatalf("receive purchase response failed:%v", err)
 		}
+
+		log.Printf("basket[%s] took %s", res.msg, time.Since(client.start))
 		switch res.status {
 		case statusOK:
 			log.Printf("basket[%s] success", res.msg)
