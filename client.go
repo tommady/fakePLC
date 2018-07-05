@@ -52,6 +52,7 @@ func (c *client) close() error {
 	select {
 	case <-c.done:
 		// already closed
+
 	default:
 		close(c.done)
 		c.conn.Close()
